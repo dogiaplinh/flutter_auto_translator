@@ -6,6 +6,7 @@ import 'package:auto_translator/src/exceptions.dart';
 import 'package:http/http.dart' as http show Client;
 
 enum _TranslateBackend {
+  auto('auto'),
   google('Google'),
   deepL('deepL');
 
@@ -21,6 +22,9 @@ const _deepLApiUrl = 'deepl.com';
 const _deepLSubdomain = 'api-free';
 const _deepLPath = '/v2/translate';
 
+const _autoApiUrl = 'translate.googleapis.com';
+const _autoPath = '/translate_a/single';
+
 /// {@template translator}
 /// Translates ARB template file via configured cloud translation service.
 /// {@endtemplate}
@@ -34,6 +38,11 @@ class Translator {
   Translator.deepL(String apiKey)
       : _apiKey = apiKey,
         _translateBackend = _TranslateBackend.deepL;
+
+  /// Translates ARB template file via Auto Tranlate.
+  Translator.auto()
+      : _apiKey = '',
+        _translateBackend = _TranslateBackend.auto;
 
   final String _apiKey;
   final _TranslateBackend _translateBackend;
@@ -87,6 +96,15 @@ class Translator {
             apiKey: _apiKey,
           );
           break;
+        case _TranslateBackend.auto:
+          result = await _autoTranslate(
+            client: _client,
+            content: values,
+            source: source,
+            target: target,
+            apiKey: _apiKey,
+          );
+          break;
       }
       if (result != null) {
         final keys = List.unmodifiable(sublist.map((e) => e.key));
@@ -99,6 +117,38 @@ class Translator {
     }
 
     return translations;
+  }
+
+  Future<List<String>?> _autoTranslate({
+    required http.Client client,
+    required List<String> content,
+    required String source,
+    required String target,
+    required String apiKey,
+  }) async {
+    var output = <String>[];
+    for (var str in content) {
+      final url = Uri.https(_autoApiUrl, _autoPath, {
+        'client': 'gtx',
+        'sl': source,
+        'tl': target,
+        'dt': 't',
+        'q': str,
+        'ie': 'UTF-8',
+        'oe': 'UTF-8'
+      });
+      final response = await client.get(url);
+
+      if (response.body.isEmpty) return null;
+
+      final json = jsonDecode(response.body);
+      // if (json['error'] != null) {
+      //   throw GoogleTranslateException('\n${json['error']['message']}');
+      // }
+
+      output.add(json[0].map((e) => e[0]).join(''));
+    }
+    return output;
   }
 
   Future<List<String>?> _googleTranslate({

@@ -153,6 +153,8 @@ Future<void> _translate(Map<String, dynamic> config) async {
           throw MissingTranslatorKeyException('No key provided for DeepL.');
         }
         return Translator.deepL(apiKey);
+      case 'auto':
+        return Translator.auto();
       default:
         throw UnsupportedTranslatorServiceException(
           '$name is not a valid translator service.',
