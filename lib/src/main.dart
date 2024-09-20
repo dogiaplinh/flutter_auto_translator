@@ -111,31 +111,33 @@ Future<void> _translate(Map<String, dynamic> config) async {
 
   final encoder = JsonEncoder.withIndent('    ');
 
-  if (!File(config['key_file']).existsSync()) {
-    // fallback to translator_key file for backwards compatibility
-    if (config['key_file'] == _defaultKeyFile &&
-        File('translator_key').existsSync()) {
-      config['key_file'] = 'translator_key';
-    } else {
-      throw MissingTranslatorKeyException(
-        'Could not find file: ${File(config['key_file']).path}',
-      );
-    }
-  }
-
-  final keyFileData = File(config['key_file']).readAsStringSync();
   final apiKeys = <String, String>{};
-  // handle simple api key string file for backwards compatibility
-  if (!keyFileData.startsWith('{') || !keyFileData.endsWith('}')) {
-    apiKeys['default'] = keyFileData;
-  } else {
-    try {
-      final json = jsonDecode(keyFileData) as Map<String, dynamic>;
-      for (final entry in json.entries) {
-        apiKeys[entry.key.toLowerCase()] = entry.value.toString();
+  if (config['service'] != 'auto') {
+    if (!File(config['key_file']).existsSync()) {
+      // fallback to translator_key file for backwards compatibility
+      if (config['key_file'] == _defaultKeyFile &&
+          File('translator_key').existsSync()) {
+        config['key_file'] = 'translator_key';
+      } else {
+        throw MissingTranslatorKeyException(
+          'Could not find file: ${File(config['key_file']).path}',
+        );
       }
-    } catch (error) {
-      throw MalformedTranslatorKeyFileException();
+    }
+
+    final keyFileData = File(config['key_file']).readAsStringSync();
+    // handle simple api key string file for backwards compatibility
+    if (!keyFileData.startsWith('{') || !keyFileData.endsWith('}')) {
+      apiKeys['default'] = keyFileData;
+    } else {
+      try {
+        final json = jsonDecode(keyFileData) as Map<String, dynamic>;
+        for (final entry in json.entries) {
+          apiKeys[entry.key.toLowerCase()] = entry.value.toString();
+        }
+      } catch (error) {
+        throw MalformedTranslatorKeyFileException();
+      }
     }
   }
   final transformer = Transformer();
