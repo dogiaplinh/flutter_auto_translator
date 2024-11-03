@@ -108,7 +108,8 @@ Future<void> _translate(Map<String, dynamic> config) async {
       templateFilename.indexOf('.arb'));
   final name = templateFilename.substring(0, templateFilename.lastIndexOf('_'));
 
-  final encoder = JsonEncoder.withIndent('    ');
+  final tabSize = config['tab-size'] as int? ?? 4;
+  final encoder = JsonEncoder.withIndent(''.padLeft(tabSize, ' '));
 
   final apiKeys = <String, String>{};
   if (config['service'] != 'auto') {
